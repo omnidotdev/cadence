@@ -1,6 +1,6 @@
 {
   "name": "@omnidotdev/cadence",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Headless calendar, date-grid, and iCalendar primitives for Omni scheduling surfaces",
   "main": "./build/index.js",
