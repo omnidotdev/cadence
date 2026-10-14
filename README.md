@@ -12,8 +12,11 @@ round-trip, so an item lands on the exact day it reads as.
 
 ## Install
 
+Consumed as a git dependency, pinned to a commit (the built `build/` output is
+committed, so no build step runs on install):
+
 ```sh
-bun add @omnidotdev/cadence
+bun add github:omnidotdev/cadence#<sha>
 ```
 
 ## Entry points
