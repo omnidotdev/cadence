@@ -128,6 +128,7 @@ class $93635573935797de$export$80ee6245ec4f29ec {
 }
 
 // node_modules/@internationalized/date/dist/private/manipulation.mjs
+var $435a2ceaa8778ed8$var$ONE_HOUR = 3600000;
 function $435a2ceaa8778ed8$export$e16d8520af44a096(date, duration) {
   let mutableDate = date.copy();
   let days = "hour" in mutableDate ? $435a2ceaa8778ed8$var$addTimeFields(mutableDate, duration) : 0;
@@ -356,6 +357,83 @@ function $435a2ceaa8778ed8$var$cycleValue(value, amount, min, max, round = false
       value = min + (value - max - 1);
   }
   return value;
+}
+function $435a2ceaa8778ed8$export$96b1d28349274637(dateTime, duration) {
+  let ms;
+  if (duration.years != null && duration.years !== 0 || duration.months != null && duration.months !== 0 || duration.weeks != null && duration.weeks !== 0 || duration.days != null && duration.days !== 0) {
+    let res = $435a2ceaa8778ed8$export$e16d8520af44a096((0, $d07e34cce18680fd$export$b21e0b124e224484)(dateTime), {
+      years: duration.years,
+      months: duration.months,
+      weeks: duration.weeks,
+      days: duration.days
+    });
+    ms = (0, $d07e34cce18680fd$export$5107c82f94518f5c)(res, dateTime.timeZone);
+  } else
+    ms = (0, $d07e34cce18680fd$export$bd4fb2bc8bb06fb)(dateTime) - dateTime.offset;
+  ms += duration.milliseconds || 0;
+  ms += (duration.seconds || 0) * 1000;
+  ms += (duration.minutes || 0) * 60000;
+  ms += (duration.hours || 0) * 3600000;
+  let res = (0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone);
+  return (0, $d07e34cce18680fd$export$b4a036af3fc0b032)(res, dateTime.calendar);
+}
+function $435a2ceaa8778ed8$export$6814caac34ca03c7(dateTime, duration) {
+  return $435a2ceaa8778ed8$export$96b1d28349274637(dateTime, $435a2ceaa8778ed8$export$3e2544e88a25bff8(duration));
+}
+function $435a2ceaa8778ed8$export$9a297d111fc86b79(dateTime, field, amount, options) {
+  switch (field) {
+    case "hour": {
+      let min = 0;
+      let max = 23;
+      if (options?.hourCycle === 12) {
+        let isPM = dateTime.hour >= 12;
+        min = isPM ? 12 : 0;
+        max = isPM ? 23 : 11;
+      }
+      let plainDateTime = (0, $d07e34cce18680fd$export$b21e0b124e224484)(dateTime);
+      let minDate = (0, $d07e34cce18680fd$export$b4a036af3fc0b032)($435a2ceaa8778ed8$export$e5d5e1c1822b6e56(plainDateTime, {
+        hour: min
+      }), new (0, $93635573935797de$export$80ee6245ec4f29ec));
+      let minAbsolute = [
+        (0, $d07e34cce18680fd$export$5107c82f94518f5c)(minDate, dateTime.timeZone, "earlier"),
+        (0, $d07e34cce18680fd$export$5107c82f94518f5c)(minDate, dateTime.timeZone, "later")
+      ].filter((ms) => (0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone).day === minDate.day)[0];
+      let maxDate = (0, $d07e34cce18680fd$export$b4a036af3fc0b032)($435a2ceaa8778ed8$export$e5d5e1c1822b6e56(plainDateTime, {
+        hour: max
+      }), new (0, $93635573935797de$export$80ee6245ec4f29ec));
+      let maxAbsolute = [
+        (0, $d07e34cce18680fd$export$5107c82f94518f5c)(maxDate, dateTime.timeZone, "earlier"),
+        (0, $d07e34cce18680fd$export$5107c82f94518f5c)(maxDate, dateTime.timeZone, "later")
+      ].filter((ms) => (0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone).day === maxDate.day).pop();
+      let ms = (0, $d07e34cce18680fd$export$bd4fb2bc8bb06fb)(dateTime) - dateTime.offset;
+      let hours = Math.floor(ms / $435a2ceaa8778ed8$var$ONE_HOUR);
+      let remainder = ms % $435a2ceaa8778ed8$var$ONE_HOUR;
+      ms = $435a2ceaa8778ed8$var$cycleValue(hours, amount, Math.floor(minAbsolute / $435a2ceaa8778ed8$var$ONE_HOUR), Math.floor(maxAbsolute / $435a2ceaa8778ed8$var$ONE_HOUR), options?.round) * $435a2ceaa8778ed8$var$ONE_HOUR + remainder;
+      return (0, $d07e34cce18680fd$export$b4a036af3fc0b032)((0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone), dateTime.calendar);
+    }
+    case "minute":
+    case "second":
+    case "millisecond":
+      return $435a2ceaa8778ed8$export$dd02b3e0007dfe28(dateTime, field, amount, options);
+    case "era":
+    case "year":
+    case "month":
+    case "day": {
+      let res = $435a2ceaa8778ed8$export$d52ced6badfb9a4c((0, $d07e34cce18680fd$export$b21e0b124e224484)(dateTime), field, amount, options);
+      let ms = (0, $d07e34cce18680fd$export$5107c82f94518f5c)(res, dateTime.timeZone);
+      return (0, $d07e34cce18680fd$export$b4a036af3fc0b032)((0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone), dateTime.calendar);
+    }
+    default:
+      throw new Error("Unsupported field " + field);
+  }
+}
+function $435a2ceaa8778ed8$export$31b5430eb18be4f8(dateTime, fields, disambiguation) {
+  let plainDateTime = (0, $d07e34cce18680fd$export$b21e0b124e224484)(dateTime);
+  let res = $435a2ceaa8778ed8$export$e5d5e1c1822b6e56($435a2ceaa8778ed8$export$adaa4cf7ef1b65be(plainDateTime, fields), fields);
+  if (res.compare(plainDateTime) === 0)
+    return dateTime;
+  let ms = (0, $d07e34cce18680fd$export$5107c82f94518f5c)(res, dateTime.timeZone, disambiguation);
+  return (0, $d07e34cce18680fd$export$b4a036af3fc0b032)((0, $d07e34cce18680fd$export$1b96692a1ba042ac)(ms, dateTime.timeZone), dateTime.calendar);
 }
 
 // node_modules/@internationalized/date/dist/private/weekStartData.mjs
@@ -630,6 +708,20 @@ function $58246871e4652552$export$60dfd74aa96791bd(date) {
 function $58246871e4652552$export$4223de14708adc63(date) {
   return `${$58246871e4652552$export$60dfd74aa96791bd(date)}T${$58246871e4652552$export$f59dee82248f5ad4(date)}`;
 }
+function $58246871e4652552$var$offsetToString(offset) {
+  let sign = Math.sign(offset) < 0 ? "-" : "+";
+  offset = Math.abs(offset);
+  let offsetHours = Math.floor(offset / 3600000);
+  let offsetMinutes = Math.floor(offset % 3600000 / 60000);
+  let offsetSeconds = Math.floor(offset % 3600000 % 60000 / 1000);
+  let stringOffset = `${sign}${String(offsetHours).padStart(2, "0")}:${String(offsetMinutes).padStart(2, "0")}`;
+  if (offsetSeconds !== 0)
+    stringOffset += `:${String(offsetSeconds).padStart(2, "0")}`;
+  return stringOffset;
+}
+function $58246871e4652552$export$bf79f1ebf4b18792(date) {
+  return `${$58246871e4652552$export$4223de14708adc63(date)}${$58246871e4652552$var$offsetToString(date.offset)}[${date.timeZone}]`;
+}
 
 // node_modules/@internationalized/date/dist/private/CalendarDate.mjs
 function $2aaf608024c21ca1$var$shiftArgs(args) {
@@ -747,6 +839,57 @@ class $2aaf608024c21ca1$export$ca871e8dbb80966f {
   }
 }
 
+class $2aaf608024c21ca1$export$d3b7288e7994edea {
+  #type;
+  constructor(...args) {
+    let [calendar, era, year, month, day] = $2aaf608024c21ca1$var$shiftArgs(args);
+    let timeZone = args.shift();
+    let offset = args.shift();
+    this.calendar = calendar;
+    this.era = era;
+    this.year = year;
+    this.month = month;
+    this.day = day;
+    this.timeZone = timeZone;
+    this.offset = offset;
+    this.hour = args.shift() || 0;
+    this.minute = args.shift() || 0;
+    this.second = args.shift() || 0;
+    this.millisecond = args.shift() || 0;
+    (0, $435a2ceaa8778ed8$export$c4e2ecac49351ef2)(this);
+  }
+  copy() {
+    if (this.era)
+      return new $2aaf608024c21ca1$export$d3b7288e7994edea(this.calendar, this.era, this.year, this.month, this.day, this.timeZone, this.offset, this.hour, this.minute, this.second, this.millisecond);
+    else
+      return new $2aaf608024c21ca1$export$d3b7288e7994edea(this.calendar, this.year, this.month, this.day, this.timeZone, this.offset, this.hour, this.minute, this.second, this.millisecond);
+  }
+  add(duration) {
+    return (0, $435a2ceaa8778ed8$export$96b1d28349274637)(this, duration);
+  }
+  subtract(duration) {
+    return (0, $435a2ceaa8778ed8$export$6814caac34ca03c7)(this, duration);
+  }
+  set(fields, disambiguation) {
+    return (0, $435a2ceaa8778ed8$export$31b5430eb18be4f8)(this, fields, disambiguation);
+  }
+  cycle(field, amount, options) {
+    return (0, $435a2ceaa8778ed8$export$9a297d111fc86b79)(this, field, amount, options);
+  }
+  toDate() {
+    return (0, $d07e34cce18680fd$export$83aac07b4c37b25)(this);
+  }
+  toString() {
+    return (0, $58246871e4652552$export$bf79f1ebf4b18792)(this);
+  }
+  toAbsoluteString() {
+    return this.toDate().toISOString();
+  }
+  compare(b) {
+    return this.toDate().getTime() - (0, $d07e34cce18680fd$export$84c95a83c799e074)(b, this.timeZone).toDate().getTime();
+  }
+}
+
 // node_modules/@internationalized/date/dist/private/conversion.mjs
 function $d07e34cce18680fd$export$bd4fb2bc8bb06fb(date) {
   date = $d07e34cce18680fd$export$b4a036af3fc0b032(date, new (0, $93635573935797de$export$80ee6245ec4f29ec));
@@ -854,6 +997,21 @@ function $d07e34cce18680fd$export$5107c82f94518f5c(date, timeZone, disambiguatio
 function $d07e34cce18680fd$export$e67a095c620b86fe(dateTime, timeZone, disambiguation = "compatible") {
   return new Date($d07e34cce18680fd$export$5107c82f94518f5c(dateTime, timeZone, disambiguation));
 }
+function $d07e34cce18680fd$export$1b96692a1ba042ac(ms, timeZone) {
+  let offset = $d07e34cce18680fd$export$59c99f3515d3493f(ms, timeZone);
+  let date = new Date(ms + offset);
+  let year = date.getUTCFullYear();
+  let month = date.getUTCMonth() + 1;
+  let day = date.getUTCDate();
+  let hour = date.getUTCHours();
+  let minute = date.getUTCMinutes();
+  let second = date.getUTCSeconds();
+  let millisecond = date.getUTCMilliseconds();
+  return new (0, $2aaf608024c21ca1$export$d3b7288e7994edea)(year < 1 ? "BC" : "AD", year < 1 ? -year + 1 : year, month, day, timeZone, offset, hour, minute, second, millisecond);
+}
+function $d07e34cce18680fd$export$e57ff100d91bd4b9(date, timeZone) {
+  return $d07e34cce18680fd$export$1b96692a1ba042ac(date.getTime(), timeZone);
+}
 function $d07e34cce18680fd$export$93522d1a439f3617(dateTime) {
   return new (0, $2aaf608024c21ca1$export$99faa760c7908e4f)(dateTime.calendar, dateTime.era, dateTime.year, dateTime.month, dateTime.day);
 }
@@ -879,6 +1037,23 @@ function $d07e34cce18680fd$export$b4a036af3fc0b032(date, calendar) {
   copy.day = calendarDate.day;
   (0, $435a2ceaa8778ed8$export$c4e2ecac49351ef2)(copy);
   return copy;
+}
+function $d07e34cce18680fd$export$84c95a83c799e074(date, timeZone, disambiguation) {
+  if (date instanceof (0, $2aaf608024c21ca1$export$d3b7288e7994edea)) {
+    if (date.timeZone === timeZone)
+      return date;
+    return $d07e34cce18680fd$export$538b00033cc11c75(date, timeZone);
+  }
+  let ms = $d07e34cce18680fd$export$5107c82f94518f5c(date, timeZone, disambiguation);
+  return $d07e34cce18680fd$export$1b96692a1ba042ac(ms, timeZone);
+}
+function $d07e34cce18680fd$export$83aac07b4c37b25(date) {
+  let ms = $d07e34cce18680fd$export$bd4fb2bc8bb06fb(date) - date.offset;
+  return new Date(ms);
+}
+function $d07e34cce18680fd$export$538b00033cc11c75(date, timeZone) {
+  let ms = $d07e34cce18680fd$export$bd4fb2bc8bb06fb(date) - date.offset;
+  return $d07e34cce18680fd$export$b4a036af3fc0b032($d07e34cce18680fd$export$1b96692a1ba042ac(ms, timeZone), date.calendar);
 }
 // src/grid.ts
 var sundayBasedWeekday = (date) => $ad063034c8620db8$export$2061056d06d7cdf7(date, "en-US");
@@ -918,7 +1093,10 @@ var buildWeekDays = (viewDate, options = {}) => {
   }
   return days;
 };
-var toDayKey = (value) => {
+var toDayKey = (value, options = {}) => {
+  if (value instanceof Date) {
+    return $d07e34cce18680fd$export$93522d1a439f3617($d07e34cce18680fd$export$e57ff100d91bd4b9(value, options.timeZone ?? $ad063034c8620db8$export$aa8b41735afcabd2())).toString();
+  }
   if (typeof value !== "string")
     return value.toString();
   const date = value.length > 10 ? $d07e34cce18680fd$export$93522d1a439f3617($58246871e4652552$export$588937bcd60ade55(value)) : $58246871e4652552$export$6b862160d295c8e(value);

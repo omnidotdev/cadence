@@ -108,6 +108,16 @@ describe("toDayKey", () => {
   test("accepts a CalendarDate", () => {
     expect(toDayKey(new CalendarDate(2026, 10, 15))).toBe("2026-10-15");
   });
+
+  test("resolves a Date to its local day in the given timezone", () => {
+    // 2026-10-15T23:30:00Z is still the 15th in New York (19:30 EDT) but the
+    // 16th in Tokyo (08:30 JST the next morning)
+    const instant = new Date("2026-10-15T23:30:00Z");
+    expect(toDayKey(instant, { timeZone: "America/New_York" })).toBe(
+      "2026-10-15",
+    );
+    expect(toDayKey(instant, { timeZone: "Asia/Tokyo" })).toBe("2026-10-16");
+  });
 });
 
 describe("parseDayKey", () => {

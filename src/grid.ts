@@ -6,7 +6,9 @@
  */
 
 import {
+  fromDate,
   getDayOfWeek,
+  getLocalTimeZone,
   parseDate,
   parseDateTime,
   toCalendarDate,
@@ -99,9 +101,18 @@ export const buildWeekDays = (
 /**
  * The `YYYY-MM-DD` local day a value falls on. Date-only and local-datetime
  * strings keep their date portion with no timezone shift; a `CalendarDate`
- * serializes directly.
+ * serializes directly; a `Date` (an absolute instant, e.g. a `timestamptz`) is
+ * resolved to its calendar day in `timeZone` (default: the local zone).
  */
-export const toDayKey = (value: string | CalendarDate): string => {
+export const toDayKey = (
+  value: string | CalendarDate | Date,
+  options: { timeZone?: string } = {},
+): string => {
+  if (value instanceof Date) {
+    return toCalendarDate(
+      fromDate(value, options.timeZone ?? getLocalTimeZone()),
+    ).toString();
+  }
   if (typeof value !== "string") return value.toString();
   const date =
     value.length > 10 ? toCalendarDate(parseDateTime(value)) : parseDate(value);

@@ -38,9 +38,12 @@ export declare const buildWeekDays: (viewDate: string | CalendarDate, options?: 
 /**
  * The `YYYY-MM-DD` local day a value falls on. Date-only and local-datetime
  * strings keep their date portion with no timezone shift; a `CalendarDate`
- * serializes directly.
+ * serializes directly; a `Date` (an absolute instant, e.g. a `timestamptz`) is
+ * resolved to its calendar day in `timeZone` (default: the local zone).
  */
-export declare const toDayKey: (value: string | CalendarDate) => string;
+export declare const toDayKey: (value: string | CalendarDate | Date, options?: {
+    timeZone?: string;
+}) => string;
 /** Parse a `YYYY-MM-DD` day key back into a `CalendarDate`. */
 export declare const parseDayKey: (dayKey: string) => CalendarDate;
 /**
