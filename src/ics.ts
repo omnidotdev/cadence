@@ -1,8 +1,9 @@
 /**
  * RFC 5545 (iCalendar) generation. Pure and dependency-free: the feed/route
  * layer fetches the dated items and hands them here. Each item becomes an
- * all-day VEVENT on its day. Server-safe, so it is published as its own
- * (`./ics`) entry point with no React surface.
+ * all-day VEVENT on its day, or a timed VEVENT when it carries a `start`
+ * instant. Server-safe, so it is published as its own (`./ics`) entry point
+ * with no React surface.
  */
 
 /** One item to publish as a calendar event. */
@@ -11,11 +12,22 @@ export interface IcsEvent {
   uid: string;
   /** Event title. */
   title: string;
-  /** Local day, `YYYY-MM-DD` (rendered as an all-day event). */
+  /** Local day, `YYYY-MM-DD`. Used for an all-day event (when `start` is unset). */
   day: string;
+  /**
+   * Start instant for a timed event. When set, the item is emitted as a timed
+   * VEVENT (UTC `DTSTART`/`DTEND`, so calendar clients convert to the viewer's
+   * zone) instead of an all-day event; `day` is then ignored.
+   */
+  start?: Date | string;
+  /** End instant for a timed event; defaults to one hour after `start`. */
+  end?: Date | string;
   /** Optional link back to the source record. */
   url?: string;
 }
+
+/** Default timed-event duration (ms) when no `end` is given. */
+const DEFAULT_EVENT_MS = 60 * 60 * 1000;
 
 /** Options controlling the generated calendar. */
 export interface IcsOptions {
@@ -89,9 +101,21 @@ export const buildIcsCalendar = (
       "BEGIN:VEVENT",
       `UID:${escapeText(event.uid)}@${uidDomain}`,
       `DTSTAMP:${dtstamp}`,
-      `DTSTART;VALUE=DATE:${toIcsDate(event.day)}`,
-      `SUMMARY:${escapeText(event.title)}`,
     );
+    if (event.start) {
+      // timed event: emit UTC instants so clients convert to the viewer's zone
+      const start = new Date(event.start);
+      const end = event.end
+        ? new Date(event.end)
+        : new Date(start.getTime() + DEFAULT_EVENT_MS);
+      lines.push(
+        `DTSTART:${toIcsTimestamp(start)}`,
+        `DTEND:${toIcsTimestamp(end)}`,
+      );
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${toIcsDate(event.day)}`);
+    }
+    lines.push(`SUMMARY:${escapeText(event.title)}`);
     if (event.url) lines.push(`URL:${escapeText(event.url)}`);
     lines.push("END:VEVENT");
   }

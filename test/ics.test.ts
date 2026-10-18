@@ -58,3 +58,26 @@ describe("buildIcsCalendar", () => {
     expect(withoutUrl).not.toContain("URL:");
   });
 });
+
+describe("buildIcsCalendar timed events", () => {
+  test("emits a timed VEVENT (UTC DTSTART/DTEND) when start is set", () => {
+    const start = new Date("2026-10-15T14:30:00Z");
+    const ics = buildIcsCalendar(
+      [{ uid: "t1", title: "Standup", day: "2026-10-15", start }],
+      { now },
+    );
+    expect(ics).toContain("DTSTART:20261015T143000Z");
+    // default one-hour duration
+    expect(ics).toContain("DTEND:20261015T153000Z");
+    expect(ics).not.toContain("DTSTART;VALUE=DATE");
+  });
+
+  test("still emits an all-day VEVENT when start is absent", () => {
+    const ics = buildIcsCalendar(
+      [{ uid: "t2", title: "Ship", day: "2026-10-15" }],
+      { now },
+    );
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261015");
+    expect(ics).not.toContain("DTEND");
+  });
+});

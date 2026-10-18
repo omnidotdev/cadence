@@ -1,4 +1,5 @@
 // src/ics.ts
+var DEFAULT_EVENT_MS = 60 * 60 * 1000;
 var escapeText = (value) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 var toIcsDate = (day) => day.replace(/-/g, "");
 var toIcsTimestamp = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
@@ -30,7 +31,15 @@ var buildIcsCalendar = (events, options = {}) => {
     `X-WR-CALNAME:${escapeText(calendarName)}`
   ];
   for (const event of events) {
-    lines.push("BEGIN:VEVENT", `UID:${escapeText(event.uid)}@${uidDomain}`, `DTSTAMP:${dtstamp}`, `DTSTART;VALUE=DATE:${toIcsDate(event.day)}`, `SUMMARY:${escapeText(event.title)}`);
+    lines.push("BEGIN:VEVENT", `UID:${escapeText(event.uid)}@${uidDomain}`, `DTSTAMP:${dtstamp}`);
+    if (event.start) {
+      const start = new Date(event.start);
+      const end = event.end ? new Date(event.end) : new Date(start.getTime() + DEFAULT_EVENT_MS);
+      lines.push(`DTSTART:${toIcsTimestamp(start)}`, `DTEND:${toIcsTimestamp(end)}`);
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${toIcsDate(event.day)}`);
+    }
+    lines.push(`SUMMARY:${escapeText(event.title)}`);
     if (event.url)
       lines.push(`URL:${escapeText(event.url)}`);
     lines.push("END:VEVENT");
