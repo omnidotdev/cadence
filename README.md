@@ -12,12 +12,16 @@ round-trip, so an item lands on the exact day it reads as.
 
 ## Install
 
-Consumed as a git dependency, pinned to a commit (the built `build/` output is
-committed, so no build step runs on install):
+Consumed as a git dependency (the built `build/` output is committed, so no
+build step runs on install). Pin a release tag (see [releases](https://github.com/omnidotdev/cadence/releases)):
 
 ```sh
-bun add github:omnidotdev/cadence#<sha>
+bun add github:omnidotdev/cadence#v0.1.0
 ```
+
+Releases are cut by Changesets: add a changeset (`bunx changeset`) with any
+user-facing change, and merging the generated "version packages" PR tags the
+release. A commit sha (`#<sha>`) also works for unreleased changes.
 
 ## Entry points
 
