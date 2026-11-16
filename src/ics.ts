@@ -57,20 +57,71 @@ const toIcsTimestamp = (date: Date): string =>
     .replace(/[-:]/g, "")
     .replace(/\.\d{3}Z$/, "Z");
 
+/** RFC 5545 3.1 line limit in octets, excluding the CRLF. */
+const MAX_LINE_OCTETS = 75;
+
+const utf8 = new TextEncoder();
+
+/** UTF-8 octet length of a string. */
+const octetLength = (value: string): number => utf8.encode(value).length;
+
+let graphemeSegmenter: Intl.Segmenter | null | undefined;
+
 /**
- * Fold a content line to <=75 octets per RFC 5545 (continuations start with a
- * space). Approximated on string length, correct for ASCII content.
+ * Split a line into user-perceived characters (grapheme clusters) when the
+ * runtime supports it, else into code points. Either way a fold never lands
+ * inside a UTF-8 sequence or a surrogate pair.
+ */
+const splitCharacters = (line: string): string[] => {
+  if (graphemeSegmenter === undefined) {
+    graphemeSegmenter =
+      typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null;
+  }
+  if (!graphemeSegmenter) return Array.from(line);
+  return Array.from(graphemeSegmenter.segment(line), ({ segment }) => segment);
+};
+
+/**
+ * Fold a content line per RFC 5545 3.1: each physical line is at most 75 UTF-8
+ * octets (excluding CRLF), and each continuation starts with a single space
+ * that counts toward its 75. Breaks only between grapheme clusters; a cluster
+ * too large to fit on any line (pathological combining sequences) is broken
+ * between its code points instead.
  */
 const foldLine = (line: string): string => {
-  if (line.length <= 75) return line;
-  const parts: string[] = [line.slice(0, 75)];
-  let rest = line.slice(75);
-  while (rest.length > 74) {
-    parts.push(` ${rest.slice(0, 74)}`);
-    rest = rest.slice(74);
+  if (octetLength(line) <= MAX_LINE_OCTETS) return line;
+
+  const physical: string[] = [];
+  let current = "";
+  let size = 0;
+
+  const append = (piece: string, pieceSize: number) => {
+    // continuation lines spend one octet on the leading space
+    const limit = physical.length === 0 ? MAX_LINE_OCTETS : MAX_LINE_OCTETS - 1;
+    if (current && size + pieceSize > limit) {
+      physical.push(current);
+      current = "";
+      size = 0;
+    }
+    current += piece;
+    size += pieceSize;
+  };
+
+  for (const character of splitCharacters(line)) {
+    const characterSize = octetLength(character);
+    if (characterSize <= MAX_LINE_OCTETS - 1) {
+      append(character, characterSize);
+    } else {
+      for (const codePoint of character) {
+        append(codePoint, octetLength(codePoint));
+      }
+    }
   }
-  parts.push(` ${rest}`);
-  return parts.join("\r\n");
+  if (current) physical.push(current);
+
+  return physical.join("\r\n ");
 };
 
 /**

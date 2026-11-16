@@ -3,18 +3,48 @@ var DEFAULT_EVENT_MS = 60 * 60 * 1000;
 var escapeText = (value) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 var toIcsDate = (day) => day.replace(/-/g, "");
 var toIcsTimestamp = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-var foldLine = (line) => {
-  if (line.length <= 75)
-    return line;
-  const parts = [line.slice(0, 75)];
-  let rest = line.slice(75);
-  while (rest.length > 74) {
-    parts.push(` ${rest.slice(0, 74)}`);
-    rest = rest.slice(74);
+var MAX_LINE_OCTETS = 75;
+var utf8 = new TextEncoder;
+var octetLength = (value) => utf8.encode(value).length;
+var graphemeSegmenter;
+var splitCharacters = (line) => {
+  if (graphemeSegmenter === undefined) {
+    graphemeSegmenter = typeof Intl !== "undefined" && typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
   }
-  parts.push(` ${rest}`);
-  return parts.join(`\r
-`);
+  if (!graphemeSegmenter)
+    return Array.from(line);
+  return Array.from(graphemeSegmenter.segment(line), ({ segment }) => segment);
+};
+var foldLine = (line) => {
+  if (octetLength(line) <= MAX_LINE_OCTETS)
+    return line;
+  const physical = [];
+  let current = "";
+  let size = 0;
+  const append = (piece, pieceSize) => {
+    const limit = physical.length === 0 ? MAX_LINE_OCTETS : MAX_LINE_OCTETS - 1;
+    if (current && size + pieceSize > limit) {
+      physical.push(current);
+      current = "";
+      size = 0;
+    }
+    current += piece;
+    size += pieceSize;
+  };
+  for (const character of splitCharacters(line)) {
+    const characterSize = octetLength(character);
+    if (characterSize <= MAX_LINE_OCTETS - 1) {
+      append(character, characterSize);
+    } else {
+      for (const codePoint of character) {
+        append(codePoint, octetLength(codePoint));
+      }
+    }
+  }
+  if (current)
+    physical.push(current);
+  return physical.join(`\r
+ `);
 };
 var buildIcsCalendar = (events, options = {}) => {
   const {
